@@ -64,9 +64,10 @@ class VQGAN(nn.Module):
         indices = quantized.argmin(dim=-1, keepdim=True)
 
         # 第二步：将 indices、quantized 张量经过维度转换，使得张量的维度为 (batch_size, codebook_size, num_features, 1)
-        quantized_expanded = quantized.unsqueeze(dim=3)
 
-        # 第三步：计算欧氏距离和最近邻索引，并返回该张量
+        quantized_expanded = quantized.unsqueeze(dim=2)
+
+        # 第三步：计算欧氏距离和最近邻索引，并返回该值
         distances = torch.norm(quantized_expanded - self.embedding.weight.unsqueeze(dim=0).unsqueeze(dim=2), dim=1)
         indices = distances.argmin(dim=1)
 
