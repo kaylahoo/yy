@@ -7,7 +7,7 @@ class VQGAN(nn.Module):
     def __init__(self, codebook_size=256):
         super(VQGAN, self).__init__()
         self.codebook_size = codebook_size
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(4, 64, kernel_size=3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
         self.conv4 = nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1)
