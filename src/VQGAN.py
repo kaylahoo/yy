@@ -33,25 +33,22 @@ class VQGAN(nn.Module):
         # 第一步：对 x_reshaped 进行自适应最大池化并提取 quantized 和 indices
         quantized_fn = lambda x: F.adaptive_max_pool2d(x, (1, 1)).squeeze(dim=-1).squeeze(dim=-1)
         quantized = quantized_fn(x_reshaped)
-        print(quantized.shape)
         indices = quantized.argmin(dim=-1, keepdim=True)
-        print(indices.shape)
 
         # 第二步：修改 indices 的形状
         num_features = x_reshaped.size(-1)
+        indices_expanded = indices.unsqueeze(dim=-1).expand(-1, -1, num_features)
 
-        indices = indices.unsqueeze(-1).expand(x.size(0), self.codebook_size, num_features)
-        print(indices.shape)
-
-        permute_order = (0, 2, 1)  # 已经获得 **num_features x codebook_sizex1** 的张量，故将池化后的两个维度删除
+        permute_order = (0, 2, 1)
         quantized = quantized.permute(*permute_order)
 
         # 第三步：计算欧氏距离和最近邻索引，并返回该值
         distances = torch.norm(quantized.unsqueeze(dim=1) - self.embedding.weight.unsqueeze(0), dim=-1)
-        indices = distances.argmin(dim=1)
+        indices = distances.argmin(dim=2)
 
-        # 对嵌入向量应用排列并返回张量
+        # 对嵌入向量应用排列并返回张量，这里将第二个维度转置成 1x16x32
         return self.embedding(indices).permute(0, 2, 1)
+
 
 
 
