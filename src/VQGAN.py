@@ -28,8 +28,11 @@ class VQGAN(nn.Module):
         x = F.relu(self.conv7(x), inplace=True)
         # Quantize
         quantized, indices = F.adaptive_max_pool2d(self.conv8(x).view(x.size(0), self.codebook_size, -1), (1, 1))
-        print(quantized.shape)
-        print(indices.shape)
+
+
+        # 打印张量和元组的形状，以确保所有的维度都被覆盖了且顺序正确
+        print("Shape of original tensor: ", quantized.shape)
+
         quantized = quantized.permute(0, 2, 1)
         emb = self.embedding.weight.unsqueeze(0)
         dist = torch.norm(emb - quantized.unsqueeze(1), dim=2)
