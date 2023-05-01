@@ -36,13 +36,11 @@ class VQGAN(nn.Module):
         indices = quantized.argmin(dim=-1, keepdim=True)
 
         # 第二步：修改 indices 的形状
-        indices = indices.squeeze(dim=-1).unsqueeze(-1)
-        indices = indices.expand(-1, -1, x_reshaped.size(-1))
-
+        indices = indices.unsqueeze(-1).expand(-1, -1, x_reshaped.size(-1))
         print(quantized.shape)
         print(indices.shape)
 
-        permute_order = (0, 2, 1)  # 已经获得 1xcodebook_sizex1 的张量，故将池化后的两个维度删除
+        permute_order = (0, 2, 1)  # 已经获得 **num_features x codebook_sizex1** 的张量，故将池化后的两个维度删除
         quantized = quantized.permute(*permute_order)
 
         # 第三步：计算欧氏距离和最近邻索引，并返回该值
