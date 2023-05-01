@@ -48,8 +48,9 @@ class BaseNetwork(nn.Module):
 
 class InpaintGenerator(BaseNetwork):
     # class Generator(nn.Module):
-    def __init__(self, codebook_size):
+    def __init__(self, codebook_size=256):
         super(InpaintGenerator, self).__init__()
+
         self.vqgan = VQGAN(codebook_size)
         self.unet = UNet()
 
