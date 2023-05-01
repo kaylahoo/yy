@@ -37,7 +37,7 @@ class VQGAN(nn.Module):
 
         # 第二步：修改 indices 的形状
         num_features = x_reshaped.size(-1)
-        indices_expanded = indices.unsqueeze(dim=-1).expand(-1, -1, num_features)
+        indices = indices.unsqueeze(dim=-1).expand(-1, -1, num_features)
 
         permute_order = (0, 2, 1)
         quantized = quantized.permute(*permute_order)
