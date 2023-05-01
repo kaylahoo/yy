@@ -33,7 +33,7 @@ class VQGAN(nn.Module):
         print(quantized.shape)
         print(indices.shape)
         permute_order = (0, 2, 1)  # 已经获得 1x1xcodebook_sizex1 的张量，故将池化后的两个维度删除
-        quantized = quantized.permute(*permute_order)
+        quantized = quantized.permute(0, 2, 1).contiguous()
 
         # 恢复缺失维度
         quantized = quantized.unsqueeze(-1)
