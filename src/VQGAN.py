@@ -63,14 +63,13 @@ class VQGAN(nn.Module):
         quantized = quantized_fn(x_reshaped)
         indices = quantized.argmin(dim=-1, keepdim=True)
 
-        # 第二步：将 indices、quantized 张量经过维度转换，使得张量的维度为 (batch_size, 1, codebook_size, num_features)
-        indices_expanded = indices.unsqueeze(dim=2).unsqueeze(dim=3)
-        quantized_expanded = quantized.unsqueeze(dim=2).unsqueeze(dim=3)
+        # 第二步：将 indices、quantized 张量经过维度转换，使得张量的维度为 (batch_size, codebook_size, num_features, 1)
+        quantized_expanded = quantized.unsqueeze(dim=3)
 
-        # 第三步：计算欧氏距离和最近邻索引，并返回该值
-        distances = torch.norm(quantized_expanded - self.embedding.weight.unsqueeze(dim=0).unsqueeze(dim=1), dim=-1)
-        indices = distances.argmin(dim=2)
+        # 第三步：计算欧氏距离和最近邻索引，并返回该张量
+        distances = torch.norm(quantized_expanded - self.embedding.weight.unsqueeze(dim=0).unsqueeze(dim=2), dim=1)
+        indices = distances.argmin(dim=1)
 
-        # 对嵌入向量应用排列并返回张量，这里将第二个维度转置成 1xnum_featuresxcodebook_size
-        return self.embedding(indices).permute(0, 3, 2, 1)
+        # 对嵌入向量应用排列并返回张量，这里将最后一个维度转置成 num_features x codebook_size x 1
+        return self.embedding(indices).permute(0, 2, 1).unsqueeze(dim=-1)
 
