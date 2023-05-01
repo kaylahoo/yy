@@ -27,16 +27,22 @@ class VQGAN(nn.Module):
         x = F.relu(self.conv6(x), inplace=True)
         x = F.relu(self.conv7(x), inplace=True)
         # Quantize
-        # 将张量调整为形状为(批次大小, 通道数(codebook_size), 高度, 宽度)的形式
         x_reshaped = self.conv8(x).view(x.size(0), self.codebook_size, -1)
-        # 使用自适应最大池化将每个通道的张量映射到单个值上，并返回可以用来还原的索引
+        print(x_reshaped.shape)
         quantized, indices = F.adaptive_max_pool2d(x_reshaped, (1, 1))
-        # 计算 permute() 函数中需要的参数，然后使用它对张量进行重新排序
-        permute_order = (0, 1, 2, 3)   # 总共四个维度，没有需要删除的维度
+        print(quantized.shape)
+        print(indices.shape)
+        permute_order = (0, 2, 3, 1)  # 已经获得 1x1xcodebook_sizex1 的张量，故将池化后的两个维度删除
         quantized = quantized.permute(*permute_order)
-        emb = self.embedding.weight.unsqueeze(0)
-        dist = torch.norm(emb - quantized.unsqueeze(1), dim=2)
-        _, indices = torch.min(dist, dim=1)
+
+        # 恢复缺失维度
+        quantized = quantized.unsqueeze(-1)
+
+        # 计算欧氏距离和最近邻索引，并返回该值
+        distances = torch.norm(quantized.unsqueeze(dim=1) - self.embedding.weight.unsqueeze(0), dim=-1)
+        indices = distances.argmin(dim=1)
+
+        # 对嵌入向量应用排列并返回张量
         return self.embedding(indices).permute(0, 2, 1)
 
 
