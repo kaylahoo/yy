@@ -29,20 +29,28 @@ class VQGAN(nn.Module):
         # Quantize
         x_reshaped = self.conv8(x).view(x.size(0), self.codebook_size, -1)
         print(x_reshaped.shape)
-        quantized, indices = F.adaptive_max_pool2d(x_reshaped, (1, 1))
+
+        # 第一步：对 x_reshaped 进行自适应最大池化并提取 quantized 和 indices
+        quantized_fn = lambda x: F.adaptive_max_pool2d(x, (1, 1)).squeeze(dim=-1).squeeze(dim=-1)
+        quantized = quantized_fn(x_reshaped)
+        indices = quantized.argmin(dim=-1, keepdim=True)
+
+        # 第二步：修改 indices 的形状
+        indices = indices.squeeze(dim=-1).unsqueeze(-1)
+        indices = indices.expand(-1, -1, x_reshaped.size(-1))
+
         print(quantized.shape)
         print(indices.shape)
-        permute_order = (0, 2, 1)  # 已经获得 1x1xcodebook_sizex1 的张量，故将池化后的两个维度删除
-        quantized = quantized.permute(0, 2, 1).contiguous()
 
-        # 恢复缺失维度
-        quantized = quantized.unsqueeze(-1)
+        permute_order = (0, 2, 1)  # 已经获得 1xcodebook_sizex1 的张量，故将池化后的两个维度删除
+        quantized = quantized.permute(*permute_order)
 
-        # 计算欧氏距离和最近邻索引，并返回该值
+        # 第三步：计算欧氏距离和最近邻索引，并返回该值
         distances = torch.norm(quantized.unsqueeze(dim=1) - self.embedding.weight.unsqueeze(0), dim=-1)
         indices = distances.argmin(dim=1)
 
         # 对嵌入向量应用排列并返回张量
         return self.embedding(indices).permute(0, 2, 1)
+
 
 
