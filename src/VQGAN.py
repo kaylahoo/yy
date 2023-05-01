@@ -29,6 +29,10 @@ class VQGAN(nn.Module):
         # Quantize
         # 将张量调整为形状为(批次大小, 通道数(codebook_size), 高度, 宽度)的形式
         x_reshaped = self.conv8(x).view(x.size(0), self.codebook_size, -1)
+        # 当你的高和宽维只有一个元素时
+        x_reshaped = x_reshaped.squeeze()
+        # 调整每个维度的尺寸，以满足 batch_size x channel_size x height x width 的形式
+        x_transposed = x_reshaped.transpose(0, 2, 3, 1)
         print(x_reshaped.shape)
         # 使用自适应最大池化将每个通道的张量映射到单个值上，并返回可以用来还原的索引
         quantized, indices = F.adaptive_max_pool2d(x_reshaped, (1, 1))
