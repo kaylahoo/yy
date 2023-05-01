@@ -32,7 +32,7 @@ class VQGAN(nn.Module):
         quantized, indices = F.adaptive_max_pool2d(x_reshaped, (1, 1))
         print(quantized.shape)
         print(indices.shape)
-        permute_order = (0, 2, 3, 1)  # 已经获得 1x1xcodebook_sizex1 的张量，故将池化后的两个维度删除
+        permute_order = (0, 2, 1)  # 已经获得 1x1xcodebook_sizex1 的张量，故将池化后的两个维度删除
         quantized = quantized.permute(*permute_order)
 
         # 恢复缺失维度
