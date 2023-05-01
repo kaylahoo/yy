@@ -34,7 +34,7 @@ class VQGAN(nn.Module):
         quantized, indices = F.adaptive_max_pool2d(x_reshaped, (1, 1))
 
         # 计算 permute() 函数中需要的参数，然后使用它对张量进行重新排序
-        permute_order = (0, 2, 1)  # 将第2和第3维交换位置
+        permute_order = (0, 1, 2, 3)   # 总共四个维度，没有需要删除的维度
         quantized = quantized.permute(*permute_order)
         emb = self.embedding.weight.unsqueeze(0)
         dist = torch.norm(emb - quantized.unsqueeze(1), dim=2)
