@@ -27,13 +27,15 @@ class VQGAN(nn.Module):
         x = F.relu(self.conv6(x), inplace=True)
         x = F.relu(self.conv7(x), inplace=True)
         # Quantize
-        quantized, indices = F.adaptive_max_pool2d(self.conv8(x).view(x.size(0), self.codebook_size, -1), (1, 1))
+        # 将张量调整为形状为(批次大小, 通道数(codebook_size), 高度, 宽度)的形式
+        x_reshaped = self.conv8(x).view(x.size(0), self.codebook_size, -1)
 
+        # 使用自适应最大池化将每个通道的张量映射到单个值上，并返回可以用来还原的索引
+        quantized, indices = F.adaptive_max_pool2d(x_reshaped, (1, 1))
 
-        # 打印张量和元组的形状，以确保所有的维度都被覆盖了且顺序正确
-        print("Shape of original tensor: ", quantized.shape)
-
-        quantized = quantized.permute(0, 2, 1)
+        # 计算 permute() 函数中需要的参数，然后使用它对张量进行重新排序
+        permute_order = (0, 2, 1)  # 将第2和第3维交换位置
+        quantized = quantized.permute(*permute_order)
         emb = self.embedding.weight.unsqueeze(0)
         dist = torch.norm(emb - quantized.unsqueeze(1), dim=2)
         _, indices = torch.min(dist, dim=1)
