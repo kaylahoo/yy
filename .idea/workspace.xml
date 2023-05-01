@@ -20,6 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bd8888f-8ae5-4310-b82e-34997980f331" name="Default Changelist" comment="yy">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VQGAN.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/VQGAN.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -105,7 +106,7 @@
       <updated>1682861667950</updated>
       <workItem from="1682861670009" duration="450000" />
       <workItem from="1682862200087" duration="1548000" />
-      <workItem from="1682920667788" duration="16308000" />
+      <workItem from="1682920667788" duration="17205000" />
     </task>
     <task id="LOCAL-00001" summary="yy">
       <created>1682862312246</created>
@@ -268,7 +269,21 @@
       <option name="project" value="LOCAL" />
       <updated>1682951494499</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="yy">
+      <created>1682951917245</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1682951917245</updated>
+    </task>
+    <task id="LOCAL-00025" summary="yy">
+      <created>1682951974690</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1682951974690</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -295,10 +310,11 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="469" y="176" key="SettingsEditor/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1682925800601" />
-    <state x="560" y="277" key="Vcs.Push.Dialog.v2" timestamp="1682951497677">
+    <state x="560" y="277" key="Vcs.Push.Dialog.v2" timestamp="1682951976347">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1682951497677" />
+    <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.779/0.0.1920.1080@0.0.1920.1080" timestamp="1682951976347" />
+    <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1682951920731" />
     <state x="560" y="252" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.984@0.0.1920.984" timestamp="1682946653590" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
