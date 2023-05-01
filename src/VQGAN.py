@@ -33,11 +33,13 @@ class VQGAN(nn.Module):
         # 第一步：对 x_reshaped 进行自适应最大池化并提取 quantized 和 indices
         quantized_fn = lambda x: F.adaptive_max_pool2d(x, (1, 1)).squeeze(dim=-1).squeeze(dim=-1)
         quantized = quantized_fn(x_reshaped)
+        print(quantized.shape)
         indices = quantized.argmin(dim=-1, keepdim=True)
+        print(indices.shape)
 
         # 第二步：修改 indices 的形状
-        indices = indices.unsqueeze(-1).expand(-1, -1, x_reshaped.size(-1))
-        print(quantized.shape)
+        num_features = x_reshaped.size(-1)
+        indices = indices.unsqueeze(dim=-1).expand(-1, -1, num_features)
         print(indices.shape)
 
         permute_order = (0, 2, 1)  # 已经获得 **num_features x codebook_sizex1** 的张量，故将池化后的两个维度删除
