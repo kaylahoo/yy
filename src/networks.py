@@ -1,5 +1,8 @@
 import torch
 import torch.nn as nn
+
+from src.UNet import UNet
+from src.VQGAN import VQGAN
 from src.partialconv2d import PartialConv2d  # 加
 from src.partialconv2d import PConvBNActiv  # 加
 from src.depconv2d import DepConvBNActiv
@@ -45,174 +48,19 @@ class BaseNetwork(nn.Module):
 
 class InpaintGenerator(BaseNetwork):
     # class Generator(nn.Module):
-
-    def __init__(self, image_in_channels=4, edge_in_channels=4, out_channels=4, init_weights=True):
+    def __init__(self, codebook_size):
         super(InpaintGenerator, self).__init__()
+        self.vqgan = VQGAN(codebook_size)
+        self.unet = UNet()
 
-        self.freeze_ec_bn = False
-        # self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+    def forward(self, x, mask):
+        # 使用 VQ-GAN 模型生成特征码
+        vq_code = self.vqgan(x)
 
-        # -----------------------
-        # small encoder-decoder
-        # -----------------------
-        self.ec_texture_1 = PConvBNActiv(image_in_channels, 64, bn=False, sample='down-7')
-        self.ec_texture_2 = PConvBNActiv(64, 128, sample='down-5', )
-        self.ec_texture_3 = PConvBNActiv(128, 256, sample='down-5')
-        self.ec_texture_4 = PConvBNActiv(256, 512, sample='down-3')
-        self.ec_texture_5 = PConvBNActiv(512, 512, sample='down-3')
-        self.ec_texture_6 = PConvBNActiv(512, 512, sample='down-3')
-        self.ec_texture_7 = PConvBNActiv(512, 512, sample='down-3')
+        # 将掩膜信息送入 U-Net 模型进行处理，得到修复后的图像
+        inpainted_img = self.unet(x * (1 - mask) + vq_code * mask)
 
-        self.dc_texture_7 = PConvBNActiv(512 + 512, 512, activ='leaky')
-        self.dc_texture_6 = PConvBNActiv(512 + 512, 512, activ='leaky')
-        self.dc_texture_5 = PConvBNActiv(512 + 512, 512, activ='leaky')
-        self.dc_texture_4 = PConvBNActiv(512 + 256, 256, activ='leaky')
-        self.dc_texture_3 = PConvBNActiv(256 + 128, 128, activ='leaky')
-        self.dc_texture_2 = PConvBNActiv(128 + 64, 64, activ='leaky')
-        self.dc_texture_1 = PConvBNActiv(64 + out_channels, 64, activ='leaky')
-
-        # -------------------------
-        # large encoder-decoder
-        # -------------------------
-        self.ec_structure_1 = DepConvBNActiv(edge_in_channels, 64, bn=False, sample='down-31', groups=edge_in_channels)
-        self.ec_structure_2 = DepConvBNActiv(64, 128, sample='down-29', groups=64)
-        self.ec_structure_3 = DepConvBNActiv(128, 256, sample='down-27', groups=128)
-        self.ec_structure_4 = DepConvBNActiv(256, 512, sample='down-13', groups=256)
-        self.ec_structure_5 = DepConvBNActiv(512, 512, sample='down-13', groups=512)
-        self.ec_structure_6 = DepConvBNActiv(512, 512, sample='down-13', groups=512)
-        self.ec_structure_7 = DepConvBNActiv(512, 512, sample='down-13', groups=512)
-
-        self.dc_structure_7 = DepConvBNActiv(512 + 512, 512, groups=512,activ='leaky')
-        self.dc_structure_6 = DepConvBNActiv(512 + 512, 512, groups=512,activ='leaky')
-        self.dc_structure_5 = DepConvBNActiv(512 + 512, 512, groups=512,activ='leaky')
-        self.dc_structure_4 = DepConvBNActiv(512 + 256, 256, groups=256,activ='leaky')
-        self.dc_structure_3 = DepConvBNActiv(256 + 128, 128, groups=128,activ='leaky')
-        self.dc_structure_2 = DepConvBNActiv(128 + 64, 64, groups=64,activ='leaky')
-        self.dc_structure_1 = DepConvBNActiv(64+out_channels, 64, groups=4,activ='leaky')
-
-        self.fusion_layer1 = nn.Sequential(
-            nn.Conv2d(64 + 64, 64, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.2)
-        )
-        self.fusion_layer2 = nn.Sequential(
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.2),
-        )
-        self.out_layer = nn.Sequential(
-            nn.Conv2d(64, 3, kernel_size=1),
-            nn.Tanh()
-        )
-
-        if init_weights:
-            self.init_weights()
-
-    def forward(self, images_masks, masks):
-#texture
-        ec_textures = {}
-        ec_structures = {}
-        input_image = images_masks
-
-        input_texture_mask = torch.cat((masks, masks, masks,masks), dim=1)
-        #print('116',input_texture_mask.shape)#[8,4,256,256]
-
-        ec_textures['ec_t_0'], ec_textures['ec_t_masks_0'] = input_image, input_texture_mask
-        # print('t00', ec_textures['ec_t_0'].shape)  # [2,4,256,256]
-        # print('t00', ec_textures['ec_t_masks_0'].shape)  # [2,4,256,256]
-        ec_textures['ec_t_1'], ec_textures['ec_t_masks_1'] = self.ec_texture_1(ec_textures['ec_t_0'],ec_textures['ec_t_masks_0'])
-        #print('t11', ec_textures['ec_t_1'].shape)#[2,64,128,128]
-        #print('t11', ec_textures['ec_t_masks_1'].shape)#[2,64,128,128]
-        ec_textures['ec_t_2'], ec_textures['ec_t_masks_2'] = self.ec_texture_2(ec_textures['ec_t_1'],ec_textures['ec_t_masks_1'])
-        #print('t22', ec_textures['ec_t_2'].shape)#[2,128,64,64]
-        #print('t22', ec_textures['ec_t_masks_2'].shape)#[2,128,64,64]
-        ec_textures['ec_t_3'], ec_textures['ec_t_masks_3'] = self.ec_texture_3(ec_textures['ec_t_2'],ec_textures['ec_t_masks_2'])
-        #print('t33', ec_textures['ec_t_3'].shape)#[2,256,32,32]
-        #print('t33', ec_textures['ec_t_masks_3'].shape)#[2,256,32,32]
-        ec_textures['ec_t_4'], ec_textures['ec_t_masks_4'] = self.ec_texture_4(ec_textures['ec_t_3'],ec_textures['ec_t_masks_3'])
-        #print('t44',ec_textures['ec_t_4'].shape)#[2,512,16,16]
-        #print('t44', ec_textures['ec_t_masks_4'].shape)#[2,512,16,16]
-        ec_textures['ec_t_5'], ec_textures['ec_t_masks_5'] = self.ec_texture_5(ec_textures['ec_t_4'],ec_textures['ec_t_masks_4'])
-        #print('t55', ec_textures['ec_t_5'].shape)#[2,512,8,8]
-        #print('t55', ec_textures['ec_t_masks_5'].shape)#[2,512,8,8]
-        ec_textures['ec_t_6'], ec_textures['ec_t_masks_6'] = self.ec_texture_6(ec_textures['ec_t_5'],ec_textures['ec_t_masks_5'])
-        # print('t66', ec_textures['ec_t_6'].shape)#[2,512,4,4]
-        # print('t66', ec_textures['ec_t_masks_6'].shape)#[2,512,4,4]
-        ec_textures['ec_t_7'], ec_textures['ec_t_masks_7'] = self.ec_texture_7(ec_textures['ec_t_6'],ec_textures['ec_t_masks_6'])
-        # print('t7', ec_textures['ec_t_7'].shape)#[2,512,2,2]
-        # print('t7m', ec_textures['ec_t_masks_7'].shape)#[2,512,2,2]
-
-#structure
-        input_structure_mask = torch.cat((masks, masks, masks,masks), dim=1)
-        ec_structures['ec_s_0'], ec_structures['ec_s_masks_0'] = input_image, input_structure_mask
-        # print('s000', ec_structures['ec_s_0'].shape)#[2,4,256,256]
-        # print('s000', ec_structures['ec_s_masks_0'].shape)#[2,4,256,256]
-        ec_structures['ec_s_1'], ec_structures['ec_s_masks_1'] = self.ec_structure_1(ec_structures['ec_s_0'],ec_structures['ec_s_masks_0'])
-        # print('s111', ec_structures['ec_s_1'].shape)#[2,64,128,128]
-        # print('s111', ec_structures['ec_s_masks_1'].shape)#[2,64,128,128]
-        ec_structures['ec_s_2'], ec_structures['ec_s_masks_2'] = self.ec_structure_2(ec_structures['ec_s_1'], ec_structures['ec_s_masks_1'])
-        # print('s222', ec_structures['ec_s_2'].shape)#[2,128,64,64]
-        # print('s222', ec_structures['ec_s_masks_2'].shape)#[2,128,64,64]
-
-        ec_structures['ec_s_3'], ec_structures['ec_s_masks_3'] = self.ec_structure_3(ec_structures['ec_s_2'],ec_structures['ec_s_masks_2'])
-        # print('s33', ec_structures['ec_s_3'].shape)#[2,256,32,32]
-        # print('s333', ec_structures['ec_s_masks_3'].shape)#[2,256,32,32]
-
-        ec_structures['ec_s_4'], ec_structures['ec_s_masks_4'] = self.ec_structure_4(ec_structures['ec_s_3'],ec_structures['ec_s_masks_3'])
-        # print('4s44', ec_structures['ec_s_4'].shape)#[2,512,16,16]
-        # print('s444', ec_structures['ec_s_masks_4'].shape)#[2,512,16,16]
-        ec_structures['ec_s_5'], ec_structures['ec_s_masks_5'] = self.ec_structure_5(ec_structures['ec_s_4'],ec_structures['ec_s_masks_4'])
-        # print('s555', ec_structures['ec_s_5'].shape)#[2,512,8,8]
-        # print('s555', ec_structures['ec_s_masks_5'].shape)#[2,512,8,8]
-        ec_structures['ec_s_6'], ec_structures['ec_s_masks_6'] = self.ec_structure_6(ec_structures['ec_s_5'],ec_structures['ec_s_masks_5'])
-        # print('s666', ec_structures['ec_s_6'].shape)#[2,512,4,4]
-        # print('s666', ec_structures['ec_s_masks_6'].shape)#[2,512,4,4]
-        ec_structures['ec_s_7'], ec_structures['ec_s_masks_7'] = self.ec_structure_7(ec_structures['ec_s_6'],ec_structures['ec_s_masks_6'])
-        # print('s777', ec_structures['ec_s_7'].shape)#[2,512,2,2]
-        # print('s777', ec_structures['ec_s_masks_7'].shape)#[2,512,2,2]
-
-        dc_texture, dc_tecture_mask = ec_structures['ec_s_7'], ec_structures['ec_s_masks_7']  # 2x2
-        # print('#', dc_texture.shape)#[2,512,2,2]
-        # print('#', dc_tecture_mask.shape)#[2,512,2,2]
-        for _ in range(7, 0, -1):
-            ec_texture_skip = 'ec_t_{:d}'.format(_ - 1)  # ec_t_6
-            ec_texture_masks_skip = 'ec_t_masks_{:d}'.format(_ - 1)  # ec_t_masks_6
-            dc_conv = 'dc_texture_{:d}'.format(_)  # dc_texture_7
-
-            dc_texture = F.interpolate(dc_texture, scale_factor=2, mode='bilinear')  # dc_texture 4x4
-            dc_tecture_mask = F.interpolate(dc_tecture_mask, scale_factor=2, mode='nearest')  # dc_tecture_mask 4x4
-            #print('!!!',dc_texture.shape)
-
-            #print(ec_textures[ec_texture_skip].shape)
-            dc_texture = torch.cat((dc_texture, ec_textures[ec_texture_skip]), dim=1)  # dc_texture 4x4 ec_textures['ec_t_6'] 4x4
-           # print('186',dc_texture.shape)
-            dc_tecture_mask = torch.cat((dc_tecture_mask, ec_textures[ec_texture_masks_skip]),
-                                        dim=1)  # dc_tecture_mask 4x4 ec_textures['ec_t_masks_6'] 4x4
-
-            dc_texture, dc_tecture_mask = getattr(self, dc_conv)(dc_texture,dc_tecture_mask)
-            #print('191',dc_texture.shape,dc_tecture_mask.shape)
-            # self.dc_texture_7 = PConvBNActiv(512 + 512, 512, activ='leaky')  self.dc_texture_7(dc_texture, dc_tecture_mask)
-
-        dc_structure, dc_structure_masks = ec_textures['ec_t_7'], ec_textures['ec_t_masks_7']
-        #print('195',dc_structure.shape)
-        for _ in range(7, 0, -1):
-            ec_structure_skip = 'ec_s_{:d}'.format(_ - 1)
-            ec_structure_masks_skip = 'ec_s_masks_{:d}'.format(_ - 1)
-            dc_conv = 'dc_structure_{:d}'.format(_)
-            #print('200', ec_structure_skip,ec_structure_masks_skip,dc_conv)
-            dc_structure = F.interpolate(dc_structure, scale_factor=2, mode='bilinear')
-            #print('202', dc_structure.shape)
-            dc_structure_masks = F.interpolate(dc_structure_masks, scale_factor=2, mode='nearest')
-            #print('204', dc_structure_masks.shape)
-            dc_structure = torch.cat((dc_structure, ec_structures[ec_structure_skip]), dim=1)
-            dc_structure_masks = torch.cat((dc_structure_masks, ec_structures[ec_structure_masks_skip]), dim=1)
-            #print('207', dc_structure.shape,dc_structure_masks.shape)
-            dc_structure, dc_structure_masks = getattr(self, dc_conv)(dc_structure, dc_structure_masks)
-        #print('210')
-        output1 = torch.cat((dc_texture, dc_structure),dim=1)
-        output2 = self.fusion_layer1(output1)
-        output3 = self.fusion_layer2(output2)
-        output4 = self.out_layer(output3)
-
-        return output4
+        return inpainted_img
 
 
 # def __init__(self, residual_blocks=8, init_weights=True):
