@@ -70,7 +70,7 @@ class InpaintGenerator(BaseNetwork):
         # 编码器部分
         x = images_masks
         print(x.shape)
-        y = masks
+        y = torch.cat((masks, masks, masks,masks), dim=1)
         print(y.shape)
         x = F.relu(self.encoder_conv1(x,y))
         x_downsample_1 = F.max_pool2d(x, 2, stride=2)
