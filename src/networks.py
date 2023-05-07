@@ -77,17 +77,21 @@ class InpaintGenerator(BaseNetwork):
 
         x_downsample_1,y_downsample_1 = self.encoder_conv2(x_downsample_1,y_downsample_1)
         #y_downsample_1 = F.relu(self.encoder_conv2(y_downsample_1,y_downsample_1))
+        print(x_downsample_1.shape,y_downsample_1.shape)
 
         x_downsample_2 = F.max_pool2d(x_downsample_1, 2, stride=2)
         y_downsample_2 = F.max_pool2d(y_downsample_1, 2, stride=2)
+        print(x_downsample_2.shape,y_downsample_2.shape)
 
         x_downsample_2,y_downsample_2= self.encoder_conv3(x_downsample_2,y_downsample_2)
         #y_downsample_2 = F.relu(self.encoder_conv3(y_downsample_2,y_downsample_2))
+        print(x_downsample_2.shape, y_downsample_2.shape)
 
         x_downsample_3 = F.max_pool2d(x_downsample_2, 2, stride=2)
         y_downsample_3 = F.max_pool2d(y_downsample_2, 2, stride=2)
-
+        print(x_downsample_3.shape, y_downsample_3.shape)
         x_downsample_3,y_downsample_3 = self.encoder_conv4(x_downsample_3, y_downsample_3)
+        print(x_downsample_3.shape, y_downsample_3.shape)
 
 
 
