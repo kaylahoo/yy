@@ -72,22 +72,33 @@ class InpaintGenerator(BaseNetwork):
     def forward(self, images_masks,masks):
         # 编码器部分
         x = images_masks
+        y = masks
         x = F.relu(self.encoder_conv1(x))
+        y = F.relu(self.encoder_conv1(y))
         x_downsample_1 = F.max_pool2d(x, 2, stride=2)
+        y_downsample_1 = F.max_pool2d(y, 2, stride=2)
 
         x_downsample_1 = F.relu(self.encoder_conv2(x_downsample_1))
+        y_downsample_1 = F.relu(self.encoder_conv2(y_downsample_1))
+
         x_downsample_2 = F.max_pool2d(x_downsample_1, 2, stride=2)
+        y_downsample_2 = F.max_pool2d(y_downsample_1, 2, stride=2)
 
         x_downsample_2 = F.relu(self.encoder_conv3(x_downsample_2))
+        y_downsample_2 = F.relu(self.encoder_conv3(y_downsample_2))
 
         # 解码器部分
         x_upsample_1 = torch.cat([self.upconv1(x_downsample_2), x_downsample_1], dim=1)
+        y_upsample_1 = torch.cat([self.upconv1(y_downsample_2), y_downsample_1], dim=1)
         x_upsample_1 = F.relu(self.decoder_conv1(x_upsample_1))
+        y_upsample_1 = F.relu(self.decoder_conv1(y_upsample_1))
 
         x_upsample_2 = torch.cat([self.upconv2(x_upsample_1), x], dim=1)
+        y_upsample_2 = torch.cat([self.upconv2(y_upsample_1), y], dim=1)
         x = torch.tanh(self.output_conv(x_upsample_2))
+        y = torch.tanh(self.output_conv(y_upsample_2))
 
-        return x,masks
+        return x,y
 
 
 # def __init__(self, residual_blocks=8, init_weights=True):
