@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from .dataset import Dataset
-from .models import InpaintingModel
+from .models import InpaintingModel, EdgeModel
 from .utils import Progbar, create_dir, stitch_images, imsave
 from .metrics import PSNR, EdgeAccuracy
 
@@ -49,8 +49,8 @@ class EdgeConnect():
         self.log_file = os.path.join(config.PATH, 'log_' + model_name + '.dat')
 
     def load(self):#   改动了
-        #if self.config.MODEL == 1:
-            #self.edge_model.load()
+        if self.config.MODEL == 1:
+            self.edge_model.load()
 
         #elif self.config.MODEL == 2:
         self.inpaint_model.load()

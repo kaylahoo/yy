@@ -5,7 +5,7 @@ import torch.nn.functional as F# 定义 U-Net 模型，这里我们简化了 U-N
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
-        self.encoder_conv1 = nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1)
+        self.encoder_conv1 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=3, padding=1)
         self.encoder_conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1)
         self.encoder_conv3 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
 

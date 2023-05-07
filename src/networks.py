@@ -51,17 +51,37 @@ class InpaintGenerator(BaseNetwork):
     def __init__(self, codebook_size=256):
         super(InpaintGenerator, self).__init__()
 
-        self.vqgan = VQGAN(codebook_size)
-        self.unet = UNet()
 
-    def forward(self, x, mask):
-        # 使用 VQ-GAN 模型生成特征码
-        vq_code = self.vqgan(x)
+        self.encoder_conv1 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=3, padding=1)
+        self.encoder_conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1)
+        self.encoder_conv3 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
 
-        # 将掩膜信息送入 U-Net 模型进行处理，得到修复后的图像
-        inpainted_img = self.unet(x * (1 - mask) + vq_code * mask)
+        self.upconv1 = nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=3, stride=2, padding=1,
+                                              output_padding=1)
+        self.upconv2 = nn.ConvTranspose2d(in_channels=16, out_channels=8, kernel_size=3, stride=2, padding=1,
+                                              output_padding=1)
+        self.decoder_conv1 = nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1)
 
-        return inpainted_img
+        self.output_conv = nn.Conv2d(in_channels=16, out_channels=3, kernel_size=3, padding=1)
+
+    def forward(self, images_masks):
+        # 编码器部分
+        x = images_masks
+        x = F.relu(self.encoder_conv1(x))
+        x_downsample_1 = F.max_pool2d(x, 2, stride=2)
+
+        x_downsample_1 = F.relu(self.encoder_conv2(x_downsample_1))
+        x_downsample_2 = F.max_pool2d(x_downsample_1, 2, stride=2)
+
+        x_downsample_2 = F.relu(self.encoder_conv3(x_downsample_2))
+
+        # 解码器部分
+        x_upsample_1 = torch.cat([self.upconv1(x_downsample_2), x_downsample_1], dim=1)
+        x_upsample_1 = F.relu(self.decoder_conv1(x_upsample_1))
+
+        x_upsample_2 = torch.cat([self.upconv2(x_upsample_1), x], dim=1)
+
+        return torch.tanh(self.output_conv(x_upsample_2))
 
 
 # def __init__(self, residual_blocks=8, init_weights=True):
@@ -259,60 +279,112 @@ class InpaintGenerator(BaseNetwork):
 #         x_fine = (torch.tanh(x) + 1) / 2
 #         orth_loss = (l_c2 + l_p2) / 2
 #         return x_fine, orth_loss
+class VectorQuantization(nn.Module):
+    def __init__(self, num_embeddings, embedding_dim, commitment_cost):
+        super(VectorQuantization, self).__init__()
+
+        self.embedding_dim = embedding_dim
+        self.num_embeddings = num_embeddings
+        self.commitment_cost = commitment_cost
+
+        self.embedding_layer = nn.Embedding(num_embeddings, embedding_dim)
+        self.embedding_layer.weight.data.uniform_(-1/num_embeddings, 1/num_embeddings)
+
+    def forward(self, inputs):
+        """
+        :param inputs: shape [batch_size, channels, height, width]
+        :return:
+            quantized: nearest embedding after input projected to embedding space
+            encoding_indices: index of nearest embeddings for each element in inputs
+            perplexity: exp(-1 * sum_all(p_{i} * log(p_{i})))
+        """
+        # Flatten input tensor to be B x (C*H*W)
+        input_flattened = inputs.view(-1, self.embedding_dim)  # flatten different to 'vector_quantize'
+
+        # Calculate distance between input and embeddings, get nearest embedding index
+        distances = (
+            (input_flattened ** 2).sum(dim=1, keepdim=True)
+            + (self.embedding_layer.weight ** 2).sum(dim=1)
+            - 2 * torch.matmul(input_flattened, self.embedding_layer.weight.t())
+        )
+        encoding_indices = torch.argmin(distances, dim=1).unsqueeze(dim=1)
+        quantized = self.embedding_layer(encoding_indices).view(inputs.shape)
+
+        # Calculate commitment loss
+        e_latent_loss = torch.mean((quantized.detach() - inputs) ** 2)
+        q_latent_loss = torch.mean((quantized - inputs.detach()) ** 2)
+        commitment_loss = self.commitment_cost * (q_latent_loss + e_latent_loss)
+
+
+        quantized = inputs + (quantized - inputs).detach()  # смещаем квантованные значения
+        return quantized, encoding_indices, commitment_loss
+
+
+# VQGAN Encoder with VectorQuantization
+class VQEncoder(nn.Module):
+    def __init__(self, embedding_dim=64, num_embeddings=256, commitment_cost=0.25):
+        super(VQEncoder, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 128, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, embedding_dim, kernel_size=3, stride=2, padding=1),
+        )
+        self.vector_quantization = VectorQuantization(num_embeddings=num_embeddings, embedding_dim=embedding_dim,
+                                                      commitment_cost=commitment_cost)
+
+    def forward(self, x):
+        h = self.encoder(x)
+        vq_x, _, _, commitment_loss = self.vector_quantization(h)
+        return vq_x, commitment_loss
+
+
+# VQGAN Decoder with VectorQuantization
+class VQDecoder(nn.Module):
+    def __init__(self, embedding_dim=64, num_embeddings=256):
+        super(VQDecoder, self).__init__()
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(embedding_dim, 512, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(512, 256, kernel_size=4, stride=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(128, 3, kernel_size=4, stride=3, padding=1),
+            nn.Tanh(),
+        )
+        self.embedding_layer = nn.Embedding(num_embeddings, embedding_dim)
+
+    def forward(self, z_e):
+        x = self.decoder(z_e) + 0.5#在 VQGAN 模型中，由于像素值的范围一般是从 0 到 1，因此将解码后的输出进行 + 0.5 的操作可将其范围变为 0.5 到 1.5，这样可以更好地匹配输入像素值范围，使得生成图像更自然。
+        return x
 
 
 class EdgeGenerator(BaseNetwork):
-    def __init__(self, residual_blocks=8, use_spectral_norm=True, init_weights=True):
+    def __init__(self, embedding_dim=64, num_embeddings=256, commitment_cost=0.25):
         super(EdgeGenerator, self).__init__()
-
-        self.encoder = nn.Sequential(
-            nn.ReflectionPad2d(3),
-            spectral_norm(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, padding=0), use_spectral_norm),
-            nn.InstanceNorm2d(64, track_running_stats=False),
-            nn.ReLU(True),
-
-            spectral_norm(nn.Conv2d(in_channels=64, out_channels=128, kernel_size=4, stride=2, padding=1),
-                          use_spectral_norm),
-            nn.InstanceNorm2d(128, track_running_stats=False),
-            nn.ReLU(True),
-
-            spectral_norm(nn.Conv2d(in_channels=128, out_channels=256, kernel_size=4, stride=2, padding=1),
-                          use_spectral_norm),
-            nn.InstanceNorm2d(256, track_running_stats=False),
-            nn.ReLU(True)
-        )
-
-        blocks = []
-        for _ in range(residual_blocks):
-            block = ResnetBlock(256, 2, use_spectral_norm=use_spectral_norm)
-            blocks.append(block)
-
-        self.middle = nn.Sequential(*blocks)
-
-        self.decoder = nn.Sequential(
-            spectral_norm(nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=4, stride=2, padding=1),
-                          use_spectral_norm),
-            nn.InstanceNorm2d(128, track_running_stats=False),
-            nn.ReLU(True),
-
-            spectral_norm(nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=4, stride=2, padding=1),
-                          use_spectral_norm),
-            nn.InstanceNorm2d(64, track_running_stats=False),
-            nn.ReLU(True),
-
-            nn.ReflectionPad2d(3),
-            nn.Conv2d(in_channels=64, out_channels=1, kernel_size=7, padding=0)
-        )
-
-        if init_weights:
-            self.init_weights()
+        self.encoder = VQEncoder(embedding_dim=embedding_dim, num_embeddings=num_embeddings,
+                                 commitment_cost=commitment_cost)
+        self.decoder = VQDecoder(embedding_dim=embedding_dim, num_embeddings=num_embeddings)
 
     def forward(self, x):
-        x = self.encoder(x)
-        x = self.middle(x)
-        x = self.decoder(x)
-        x = torch.sigmoid(x)
-        return x
+        # Encoder output
+        quantized_x, commitment_loss = self.encoder(x)
+
+        # Decoder output
+        z_e = self.encoder.vector_quantization.embedding_layer.weight.transpose(0, 1).cuda()  # [z_dim, K]
+        z_q = self.encoder.vector_quantization(quantized_x)[1].squeeze()
+
+        return self.decoder(z_e[z_q]), commitment_loss
 
 
 class Discriminator(BaseNetwork):

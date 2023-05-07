@@ -19,7 +19,14 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5bd8888f-8ae5-4310-b82e-34997980f331" name="Default Changelist" comment="yy" />
+    <list default="true" id="5bd8888f-8ae5-4310-b82e-34997980f331" name="Default Changelist" comment="yy">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/UNet.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/UNet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VQGAN.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/VQGAN.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/edge_connect.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/edge_connect.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/networks.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/networks.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -103,7 +110,8 @@
       <updated>1682861667950</updated>
       <workItem from="1682861670009" duration="450000" />
       <workItem from="1682862200087" duration="1548000" />
-      <workItem from="1682920667788" duration="17977000" />
+      <workItem from="1682920667788" duration="26054000" />
+      <workItem from="1683428462163" duration="921000" />
     </task>
     <task id="LOCAL-00001" summary="yy">
       <created>1682862312246</created>
@@ -294,7 +302,14 @@
       <option name="project" value="LOCAL" />
       <updated>1682953442426</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="yy">
+      <created>1682953777939</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1682953777939</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -321,10 +336,10 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="469" y="176" key="SettingsEditor/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1682925800601" />
-    <state x="560" y="277" key="Vcs.Push.Dialog.v2" timestamp="1682953444098">
+    <state x="560" y="277" key="Vcs.Push.Dialog.v2" timestamp="1682953780025">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.779/0.0.1920.1080@0.0.1920.1080" timestamp="1682951976347" />
+    <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.779/0.0.1920.1080@0.0.1920.1080" timestamp="1682953780025" />
     <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1682953444098" />
     <state x="560" y="252" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.984@0.0.1920.984" timestamp="1682946653590" />
   </component>

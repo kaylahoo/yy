@@ -56,7 +56,7 @@ class VQGAN(nn.Module):
         # Quantize
 
         x_reshaped = self.conv8(x).view(x.size(0), self.codebook_size, -1)
-        print(x_reshaped.shape)
+        print(x_reshaped.shape)# torch.Size([2, 256, 4])
 
         # 第一步：对 x_reshaped 进行自适应最大池化并提取 quantized 和 indices
         quantized_fn = lambda x: F.adaptive_max_pool2d(x, (1, 1)).squeeze(dim=-1).squeeze(dim=-1)
