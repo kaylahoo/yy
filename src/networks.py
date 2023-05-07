@@ -58,23 +58,24 @@ class InpaintGenerator(BaseNetwork):
         self.encoder_conv4 = PConvBNActiv(in_channels=256, out_channels=512, sample='down-3')
 
         # 定义解码器（对称的 UNet 结构）
-        self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.upconv4 = nn.ConvTranspose2d(64, 3, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.upconv1 = nn.ConvTranspose2d(512+512, 256, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.upconv2 = nn.ConvTranspose2d(256+256, 128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.upconv3 = nn.ConvTranspose2d(128+128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.upconv4 = nn.ConvTranspose2d(64+64, 3, kernel_size=3, stride=2, padding=1, output_padding=1)
 
         if init_weights:
             self.init_weights()
 
     def forward(self, images_masks,masks):
         # 编码器部分
-        x = images_masks
-        print(x.shape)
-        y = torch.cat((masks, masks, masks,masks), dim=1)
-        print(y.shape)
+        x = images_masks#2,4,256,256
+        y = torch.cat((masks, masks, masks,masks), dim=1)#2,4,256,256
         x,y= self.encoder_conv1(x,y)
+        print(x.shape)
+        print(y.shape)
         x_downsample_1 = F.max_pool2d(x, 2, stride=2)
         y_downsample_1 = F.max_pool2d(y, 2, stride=2)
+        print(x_downsample_1.shape,y_downsample_1.shape)
 
         x_downsample_1,y_downsample_1 = self.encoder_conv2(x_downsample_1,y_downsample_1)
         #y_downsample_1 = F.relu(self.encoder_conv2(y_downsample_1,y_downsample_1))
