@@ -72,23 +72,23 @@ class InpaintGenerator(BaseNetwork):
         print(x.shape)
         y = torch.cat((masks, masks, masks,masks), dim=1)
         print(y.shape)
-        x,y= F.relu(self.encoder_conv1(x,y))
+        x,y= self.encoder_conv1(x,y)
         x_downsample_1 = F.max_pool2d(x, 2, stride=2)
         y_downsample_1 = F.max_pool2d(y, 2, stride=2)
 
-        x_downsample_1,y_downsample_1 = F.relu(self.encoder_conv2(x_downsample_1,y_downsample_1))
+        x_downsample_1,y_downsample_1 = self.encoder_conv2(x_downsample_1,y_downsample_1)
         #y_downsample_1 = F.relu(self.encoder_conv2(y_downsample_1,y_downsample_1))
 
         x_downsample_2 = F.max_pool2d(x_downsample_1, 2, stride=2)
         y_downsample_2 = F.max_pool2d(y_downsample_1, 2, stride=2)
 
-        x_downsample_2,y_downsample_2= F.relu(self.encoder_conv3(x_downsample_2,y_downsample_2))
+        x_downsample_2,y_downsample_2= self.encoder_conv3(x_downsample_2,y_downsample_2)
         #y_downsample_2 = F.relu(self.encoder_conv3(y_downsample_2,y_downsample_2))
 
         x_downsample_3 = F.max_pool2d(x_downsample_2, 2, stride=2)
         y_downsample_3 = F.max_pool2d(y_downsample_2, 2, stride=2)
 
-        x_downsample_3,y_downsample_3 = F.relu(self.encoder_conv4(x_downsample_3, y_downsample_3))
+        x_downsample_3,y_downsample_3 = self.encoder_conv4(x_downsample_3, y_downsample_3)
 
 
 
