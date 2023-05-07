@@ -72,7 +72,7 @@ class InpaintGenerator(BaseNetwork):
         print(x.shape)
         y = torch.cat((masks, masks, masks,masks), dim=1)
         print(y.shape)
-        x = F.relu(self.encoder_conv1(x,y))
+        x = F.relu(self.encoder_conv1(x))
         x_downsample_1 = F.max_pool2d(x, 2, stride=2)
         y_downsample_1 = F.max_pool2d(y, 2, stride=2)
 
@@ -104,9 +104,9 @@ class InpaintGenerator(BaseNetwork):
         y_upsample_3 = torch.cat([self.upconv3(y_upsample_2), masks], dim=1)
 
         x6 = self.upconv4(x_upsample_3)
-        y6 = self.upconv4(y_upsample_3)
+        #y6 = self.upconv4(y_upsample_3)
 
-        return torch.tanh(x6), torch.tanh(y6)
+        return torch.tanh(x6)
 
 
 
