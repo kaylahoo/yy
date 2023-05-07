@@ -48,14 +48,14 @@ class BaseNetwork(nn.Module):
 
 class InpaintGenerator(BaseNetwork):
     # class Generator(nn.Module):
-    def __init__(self,in_channels=4):
+    def __init__(self,in_channels=4,init_weights=True):
         super(InpaintGenerator, self).__init__()
 
 
-        self.encoder_conv1 = PartialConv2d(in_channels, out_channels=64, bn = False,sample='down-7')
-        self.encoder_conv2 = PartialConv2d(in_channels=64, out_channels=128,sample='down-5'  )
-        self.encoder_conv3 = PartialConv2d(in_channels=128, out_channels=256,sample='down-5' )
-        self.encoder_conv4 = PartialConv2d(in_channels=256, out_channels=512, sample='down-3')
+        self.encoder_conv1 = PConvBNActiv(in_channels, out_channels=64, bn = False, sample='down-7')
+        self.encoder_conv2 = PConvBNActiv(in_channels=64, out_channels=128,sample='down-5'  )
+        self.encoder_conv3 = PConvBNActiv(in_channels=128, out_channels=256,sample='down-5' )
+        self.encoder_conv4 = PConvBNActiv(in_channels=256, out_channels=512, sample='down-3')
 
 
         self.upconv1 = nn.ConvTranspose2d(in_channels=512, out_channels=256, kernel_size=3, stride=2, padding=1,
@@ -65,6 +65,9 @@ class InpaintGenerator(BaseNetwork):
         self.decoder_conv1 = nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, padding=1)
 
         self.output_conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, padding=1)
+
+        if init_weights:
+            self.init_weights()
 
     def forward(self, images_masks,masks):
         # 编码器部分
