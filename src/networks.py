@@ -51,20 +51,17 @@ class InpaintGenerator(BaseNetwork):
     def __init__(self,in_channels=4,init_weights=True):
         super(InpaintGenerator, self).__init__()
 
-
+        #定义编码器
         self.encoder_conv1 = PConvBNActiv(in_channels, out_channels=64, bn = False, sample='down-7')
         self.encoder_conv2 = PConvBNActiv(in_channels=64, out_channels=128,sample='down-5'  )
         self.encoder_conv3 = PConvBNActiv(in_channels=128, out_channels=256,sample='down-5' )
         self.encoder_conv4 = PConvBNActiv(in_channels=256, out_channels=512, sample='down-3')
 
-
-        self.upconv1 = nn.ConvTranspose2d(in_channels=512, out_channels=256, kernel_size=3, stride=2, padding=1,
-                                              output_padding=1)
-        self.upconv2 = nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=3, stride=2, padding=1,
-                                              output_padding=1)
-        self.decoder_conv1 = nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, padding=1)
-
-        self.output_conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, padding=1)
+        # 定义解码器（对称的 UNet 结构）
+        self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.upconv4 = nn.ConvTranspose2d(64, 3, kernel_size=3, stride=2, padding=1, output_padding=1)
 
         if init_weights:
             self.init_weights()
@@ -72,33 +69,46 @@ class InpaintGenerator(BaseNetwork):
     def forward(self, images_masks,masks):
         # 编码器部分
         x = images_masks
+        print(x.shape)
         y = masks
-        x = F.relu(self.encoder_conv1(x))
-        y = F.relu(self.encoder_conv1(y))
+        print(y.shape)
+        x = F.relu(self.encoder_conv1(x,y))
         x_downsample_1 = F.max_pool2d(x, 2, stride=2)
         y_downsample_1 = F.max_pool2d(y, 2, stride=2)
 
-        x_downsample_1 = F.relu(self.encoder_conv2(x_downsample_1))
-        y_downsample_1 = F.relu(self.encoder_conv2(y_downsample_1))
+        x_downsample_1 = F.relu(self.encoder_conv2(x_downsample_1,y_downsample_1))
+        #y_downsample_1 = F.relu(self.encoder_conv2(y_downsample_1,y_downsample_1))
 
         x_downsample_2 = F.max_pool2d(x_downsample_1, 2, stride=2)
         y_downsample_2 = F.max_pool2d(y_downsample_1, 2, stride=2)
 
-        x_downsample_2 = F.relu(self.encoder_conv3(x_downsample_2))
-        y_downsample_2 = F.relu(self.encoder_conv3(y_downsample_2))
+        x_downsample_2 = F.relu(self.encoder_conv3(x_downsample_2,y_downsample_2))
+        #y_downsample_2 = F.relu(self.encoder_conv3(y_downsample_2,y_downsample_2))
+
+        x_downsample_3 = F.max_pool2d(x_downsample_2, 2, stride=2)
+        y_downsample_3 = F.max_pool2d(y_downsample_2, 2, stride=2)
+
+        x_downsample_3 = F.relu(self.encoder_conv4(x_downsample_3, y_downsample_3))
+
+
+
 
         # 解码器部分
-        x_upsample_1 = torch.cat([self.upconv1(x_downsample_2), x_downsample_1], dim=1)
+        x_upsample_1 = torch.cat([self.upconv1(x_downsample_3), x_downsample_2], dim=1)
         y_upsample_1 = torch.cat([self.upconv1(y_downsample_2), y_downsample_1], dim=1)
-        x_upsample_1 = F.relu(self.decoder_conv1(x_upsample_1))
-        y_upsample_1 = F.relu(self.decoder_conv1(y_upsample_1))
 
-        x_upsample_2 = torch.cat([self.upconv2(x_upsample_1), x], dim=1)
-        y_upsample_2 = torch.cat([self.upconv2(y_upsample_1), y], dim=1)
-        x = torch.tanh(self.output_conv(x_upsample_2))
-        y = torch.tanh(self.output_conv(y_upsample_2))
+        x_upsample_2 = torch.cat([self.upconv2(x_upsample_1), x_downsample_1], dim=1)
+        y_upsample_2 = torch.cat([self.upconv2(y_upsample_1), y_downsample_1], dim=1)
 
-        return x,y
+        x_upsample_3 = torch.cat([self.upconv3(x_upsample_2), images_masks], dim=1)
+        y_upsample_3 = torch.cat([self.upconv3(y_upsample_2), masks], dim=1)
+
+        x6 = self.upconv4(x_upsample_3)
+        y6 = self.upconv4(y_upsample_3)
+
+        return torch.tanh(x6), torch.tanh(y6)
+
+
 
 
 # def __init__(self, residual_blocks=8, init_weights=True):
