@@ -48,23 +48,25 @@ class BaseNetwork(nn.Module):
 
 class InpaintGenerator(BaseNetwork):
     # class Generator(nn.Module):
-    def __init__(self, codebook_size=256):
+    def __init__(self,in_channels=4):
         super(InpaintGenerator, self).__init__()
 
 
-        self.encoder_conv1 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=3, padding=1)
-        self.encoder_conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1)
-        self.encoder_conv3 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
+        self.encoder_conv1 = PartialConv2d(in_channels, out_channels=64, bn = False,sample='down-7')
+        self.encoder_conv2 = PartialConv2d(in_channels=64, out_channels=128,sample='down-5'  )
+        self.encoder_conv3 = PartialConv2d(in_channels=128, out_channels=256,sample='down-5' )
+        self.encoder_conv4 = PartialConv2d(in_channels=256, out_channels=512, sample='down-3')
 
-        self.upconv1 = nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=3, stride=2, padding=1,
+
+        self.upconv1 = nn.ConvTranspose2d(in_channels=512, out_channels=256, kernel_size=3, stride=2, padding=1,
                                               output_padding=1)
-        self.upconv2 = nn.ConvTranspose2d(in_channels=16, out_channels=8, kernel_size=3, stride=2, padding=1,
+        self.upconv2 = nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=3, stride=2, padding=1,
                                               output_padding=1)
-        self.decoder_conv1 = nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1)
+        self.decoder_conv1 = nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, padding=1)
 
-        self.output_conv = nn.Conv2d(in_channels=16, out_channels=3, kernel_size=3, padding=1)
+        self.output_conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, padding=1)
 
-    def forward(self, images_masks):
+    def forward(self, images_masks,masks):
         # 编码器部分
         x = images_masks
         x = F.relu(self.encoder_conv1(x))
@@ -80,8 +82,9 @@ class InpaintGenerator(BaseNetwork):
         x_upsample_1 = F.relu(self.decoder_conv1(x_upsample_1))
 
         x_upsample_2 = torch.cat([self.upconv2(x_upsample_1), x], dim=1)
+        x = torch.tanh(self.output_conv(x_upsample_2))
 
-        return torch.tanh(self.output_conv(x_upsample_2))
+        return x,masks
 
 
 # def __init__(self, residual_blocks=8, init_weights=True):

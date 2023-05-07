@@ -19,7 +19,10 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="5bd8888f-8ae5-4310-b82e-34997980f331" name="Default Changelist" comment="yy" />
+    <list default="true" id="5bd8888f-8ae5-4310-b82e-34997980f331" name="Default Changelist" comment="yy">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/networks.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/networks.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -45,7 +48,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -55,10 +58,11 @@
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src" />
       <recent name="$PROJECT_DIR$" />
     </key>
-    <key name="CopyFile.RECENT_KEYS">
+    <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
@@ -104,7 +108,7 @@
       <workItem from="1682861670009" duration="450000" />
       <workItem from="1682862200087" duration="1548000" />
       <workItem from="1682920667788" duration="26054000" />
-      <workItem from="1683428462163" duration="1530000" />
+      <workItem from="1683428462163" duration="4205000" />
     </task>
     <task id="LOCAL-00001" summary="yy">
       <created>1682862312246</created>
@@ -309,7 +313,14 @@
       <option name="project" value="LOCAL" />
       <updated>1683429394063</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="yy">
+      <created>1683430149163</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1683430149163</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -336,11 +347,11 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="469" y="176" key="SettingsEditor/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1682925800601" />
-    <state x="560" y="277" key="Vcs.Push.Dialog.v2" timestamp="1683429400936">
-      <screen x="0" y="0" width="1920" height="984" />
+    <state x="560" y="277" key="Vcs.Push.Dialog.v2" timestamp="1683430151979">
+      <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.779/0.0.1920.1080@0.0.1920.1080" timestamp="1682953780025" />
-    <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1682953444098" />
+    <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.1080@0.0.1920.1080" timestamp="1683430151979" />
     <state x="560" y="277" key="Vcs.Push.Dialog.v2/-1440.25.1440.875/0.0.1920.984@0.0.1920.984" timestamp="1683429400936" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
