@@ -72,36 +72,36 @@ class InpaintGenerator(BaseNetwork):
         print(x.shape)
         y = torch.cat((masks, masks, masks,masks), dim=1)
         print(y.shape)
-        x = F.relu(self.encoder_conv1(x))
+        x,y= F.relu(self.encoder_conv1(x,y))
         x_downsample_1 = F.max_pool2d(x, 2, stride=2)
         y_downsample_1 = F.max_pool2d(y, 2, stride=2)
 
-        x_downsample_1 = F.relu(self.encoder_conv2(x_downsample_1,y_downsample_1))
+        x_downsample_1,y_downsample_1 = F.relu(self.encoder_conv2(x_downsample_1,y_downsample_1))
         #y_downsample_1 = F.relu(self.encoder_conv2(y_downsample_1,y_downsample_1))
 
         x_downsample_2 = F.max_pool2d(x_downsample_1, 2, stride=2)
         y_downsample_2 = F.max_pool2d(y_downsample_1, 2, stride=2)
 
-        x_downsample_2 = F.relu(self.encoder_conv3(x_downsample_2,y_downsample_2))
+        x_downsample_2,y_downsample_2= F.relu(self.encoder_conv3(x_downsample_2,y_downsample_2))
         #y_downsample_2 = F.relu(self.encoder_conv3(y_downsample_2,y_downsample_2))
 
         x_downsample_3 = F.max_pool2d(x_downsample_2, 2, stride=2)
         y_downsample_3 = F.max_pool2d(y_downsample_2, 2, stride=2)
 
-        x_downsample_3 = F.relu(self.encoder_conv4(x_downsample_3, y_downsample_3))
+        x_downsample_3,y_downsample_3 = F.relu(self.encoder_conv4(x_downsample_3, y_downsample_3))
 
 
 
 
         # 解码器部分
         x_upsample_1 = torch.cat([self.upconv1(x_downsample_3), x_downsample_2], dim=1)
-        y_upsample_1 = torch.cat([self.upconv1(y_downsample_2), y_downsample_1], dim=1)
+        #y_upsample_1 = torch.cat([self.upconv1(y_downsample_2), y_downsample_1], dim=1)
 
         x_upsample_2 = torch.cat([self.upconv2(x_upsample_1), x_downsample_1], dim=1)
-        y_upsample_2 = torch.cat([self.upconv2(y_upsample_1), y_downsample_1], dim=1)
+        #y_upsample_2 = torch.cat([self.upconv2(y_upsample_1), y_downsample_1], dim=1)
 
         x_upsample_3 = torch.cat([self.upconv3(x_upsample_2), images_masks], dim=1)
-        y_upsample_3 = torch.cat([self.upconv3(y_upsample_2), masks], dim=1)
+        #y_upsample_3 = torch.cat([self.upconv3(y_upsample_2), masks], dim=1)
 
         x6 = self.upconv4(x_upsample_3)
         #y6 = self.upconv4(y_upsample_3)
